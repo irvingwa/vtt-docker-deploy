@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  foundry:
+    image: felddy/foundryvtt:release
+    hostname: my_foundry_host
+    init: true
+    restart: "unless-stopped"
+    volumes:
+      - type: bind
+        source: ./vtt
+        target: /data
+    environment:
+      - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD}
+      - FOUNDRY_USERNAME=${FOUNDRY_USERNAME}
+      - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.foundry.entrypoints=http"
+      - "traefik.http.routers.foundry.rule=Host(`${HOST_NAME}`)"
+      - "traefik.http.middlewares.foundry-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.foundry.middlewares=foundry-https-redirect"
+      - "traefik.http.routers.foundry-secure.entrypoints=https"
+      - "traefik.http.routers.foundry-secure.rule=Host(`${HOST_NAME}`)"
+      - "traefik.http.routers.foundry-secure.tls=true"
+      - "traefik.http.routers.foundry-secure.tls.certresolver=certresolver"
+      - "traefik.http.routers.foundry-secure.service=foundry"
+      - "traefik.http.services.foundry.loadbalancer.server.port=30000"
+      - "traefik.docker.network=traefik-network"
+    ports:
+      - target: "30000"
+        published: "30000"
+        protocol: tcp
+    networks:
+      - traefik-network
+  traefik:
+    image: traefik:latest
+    container_name: "traefik"
+    networks:
+      - traefik-network
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--entrypoints.http.address=:80"
+      - "--entrypoints.https.address=:443"
+      - "--certificatesresolvers.certresolver.acme.dnschallenge=true"
+      - "--certificatesresolvers.certresolver.acme.dnschallenge.provider=duckdns"
+      - "--certificatesresolvers.certresolver.acme.email=${EMAIL}"
+      - "--certificatesresolvers.certresolver.acme.storage=acme.json"
+    environment: 
+      - DUCKDNS_TOKEN=${DUCK_TOKEN}
+  duckdns:
+      container_name: duckdns
+      image: linuxserver/duckdns
+      restart: unless-stopped
+      environment:
+        - TZ=${TIME_ZONE}
+        - SUBDOMAINS=${SUB_DOMAIN}
+        - TOKEN=${DUCK_TOKEN}
+networks:
+  traefik-network:
+    name: traefik-network
