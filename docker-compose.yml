@@ -43,6 +43,7 @@ services:
       - 443:443
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - "letsencrypt:/letsencrypt/"
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -52,7 +53,7 @@ services:
       - "--certificatesresolvers.certresolver.acme.dnschallenge=true"
       - "--certificatesresolvers.certresolver.acme.dnschallenge.provider=duckdns"
       - "--certificatesresolvers.certresolver.acme.email=${EMAIL}"
-      - "--certificatesresolvers.certresolver.acme.storage=acme.json"
+      - "--certificatesresolvers.certresolver.acme.storage=/letsencrypt/acme.json"
     environment: 
       - DUCKDNS_TOKEN=${DUCK_TOKEN}
   duckdns:
@@ -66,3 +67,5 @@ services:
 networks:
   traefik-network:
     name: traefik-network
+volumes:
+  letsencrypt:
