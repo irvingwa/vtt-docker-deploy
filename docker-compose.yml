@@ -14,6 +14,7 @@ services:
       - FOUNDRY_PASSWORD=${FOUNDRY_PASSWORD}
       - FOUNDRY_USERNAME=${FOUNDRY_USERNAME}
       - FOUNDRY_ADMIN_KEY=${FOUNDRY_ADMIN_KEY}
+      - PRODUCTION=true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.foundry.entrypoints=http"
